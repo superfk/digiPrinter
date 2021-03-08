@@ -1,0 +1,5 @@
+pyserial==3.5
+python-escpos==2.2.0
+pyinstaller==4.2
+pythoncrc==1.21
+keyboard
