@@ -88,8 +88,32 @@ class MainAPI():
         statusCode, value = self.gelomat.get_single_value()
         return value, statusCode
     
+    def initHW(self):
+        if not self.printer.connected:
+            self.printer.connect()
+
+        if not self.gelomat.connected:
+            try:
+                self.gelomat.close()
+            except:
+                pass
+            finally:
+                try:
+                    self.com = cfg.getValue('com')
+                    self.gelomat.open(self.com, timeout=1)
+                    self.gelomat.config(debug=False, wait_cmd = False)
+                    self.gelomat_error = False
+                except:
+                    self.gelomat.connected = False
+                    if not self.gelomat_error:
+                        errMsg = "Error occured: Gelomat connection error"
+                        print(f"{errMsg}")
+                        self.gelomat_error = True
+                        if self.printer.connected:
+                            self.printer.printText(f"{errMsg}\n")
+
+
     def printHeader(self):
-        mearT = self.getTime()
         devName = self.gelomat.get_dev_name()
         lift = self.gelomat.get_lift()
         mode = self.gelomat.get_mode()
@@ -100,18 +124,21 @@ class MainAPI():
         self.printer.printText(f"Device name: {devName}\n")
         self.printer.printText(f"Lift: {lift} mm\n")
         self.printer.printText(f"Mode: {mode}\n\n")
-        self.printer.printText(f"[Measurement Start] @ {mearT}\n")
 
     def printBody(self):
         value, statusCode = self.waitMear()
         mearT = self.getTime()
         if statusCode == 1:
+            if len(self.dataset) == 0:
+                self.printer.printText(f"[Measurement Start] @ {mearT}\n")
             self.printer.printText(f"{mearT}\t{value}\n")
             self.dataset.append(value)
         elif statusCode < 0:
+            if len(self.dataset) == 0:
+                self.printer.printText(f"[Measurement Start] @ {mearT}\n")
             self.printer.printText(f"{mearT}\tdistance too big when measuring\n")
         else:
-            time.sleep(0.2)
+            return 0
 
     def printFooter(self):
         mearT = self.getTime()
@@ -147,63 +174,43 @@ class MainAPI():
 
     def main(self):
         while True:
-            if not self.printer.connected:
-                self.printer.connect()
-            if not self.gelomat.connected:
-                try:
-                    self.gelomat.close()
-                except:
-                    pass
-                finally:
-                    try:
-                        self.com = cfg.getValue('com')
-                        self.gelomat.open(self.com, timeout=1)
-                        self.gelomat.config(debug=False, wait_cmd = False)
-                        self.gelomat_error = False
-                    except:
-                        self.gelomat.connected = False
-                        if not self.gelomat_error:
-                            errMsg = "Error occured: Gelomat connection error"
-                            print(f"{errMsg}")
-                            self.gelomat_error = True
-                            if self.printer.connected:
-                                self.printer.printText(f"{errMsg}\n")
-
-            # all instr are connected, waitiing for data
             try:
-                if keyboard.is_pressed('enter'):
+                self.initHW()
+                # all instr are connected, waitiing for data
+                if keyboard.is_pressed(cfg.getValue('key_batchend')):
                     self.batchEnd = True
-                if keyboard.is_pressed('0'):
+                if keyboard.is_pressed(cfg.getValue('key_clearError')):
                     self.errMsg = None
-                if keyboard.is_pressed('7'):
+                if keyboard.is_pressed(cfg.getValue('key_cut')):
                     self.printer.cut()
+                if keyboard.is_pressed(cfg.getValue('key_testpage')):
+                    self.printer.testpage()
 
-                if self.batchStart:
-                    self.printHeader()
-                    self.batchStart = False
-                    self.batchMearing = True
-                    self.batchEnd = False
-                
-                if self.batchMearing:
-                    self.printBody()
-
-                if self.batchEnd:
+                if self.gelomat.connected and self.printer.connected:
+                    if self.batchStart:
+                        self.printHeader()
+                        self.batchStart = False
+                        self.batchMearing = True
+                        self.batchEnd = False
+                    
                     if self.batchMearing:
-                        self.printFooter()
-                        self.batchStart = True
-                        self.batchMearing = False
-                    self.batchEnd = False
+                        self.printBody()
 
+                    if self.batchEnd:
+                        if self.batchMearing:
+                            self.printFooter()
+                            self.batchStart = True
+                        self.batchEnd = False
+                self.errMsg = None
             except:
-                if self.gelomat_error:
-                    pass
                 if self.errMsg is None:
                     self.errMsg = traceback.format_exc()
                     errMsg = f"Error occured: {self.errMsg}"
                     print(f"{errMsg}")
                     if self.printer.connected:
                         self.printer.printText(f"{errMsg}\n")
-                time.sleep(1)
+            finally:
+                time.sleep(0.2)
 
 
 if __name__=='__main__':

@@ -297,7 +297,13 @@ class GelomatDigitest(Digitest):
         while True:
             data = self.readline_only()
             if data:
-                time.sleep(5)
+                '''
+                why delay 5 sec? 
+                because once the device measurement completed, 
+                immediately send start_mear again, the command will be ignored.
+                need to improve by Peter
+                '''
+                time.sleep(0.1) 
                 return 1, float(data)
             else:
                 return 0, 0
@@ -727,7 +733,7 @@ def GelomatDigitestMeasure():
                 time.sleep(0.1)
 
     
-    ba.open("COM3")
+    ba.open("COM5")
     ba.config(debug=False,wait_cmd = False)
     for i in range(1):
         ret = mear(ba)
@@ -742,6 +748,4 @@ def DigitestTest_GraphMode():
     ba.close()
 
 if __name__ == '__main__':
-    # test_rotation_single_mear()
-    # test_rotation_graph_mear()
     GelomatDigitestMeasure()

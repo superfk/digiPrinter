@@ -2,5 +2,9 @@
     "ip":"192.168.192.168",
     "com": "COM3",
     "time_format": "%Y-%m-%d %H:%M:%S",
-    "decimal": 1
+    "decimal": 1,
+    "key_batchend": "enter",
+    "key_cut": "7",
+    "key_testpage": "9",
+    "key_clearError": "0"
 }
