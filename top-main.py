@@ -3,11 +3,14 @@ import win32api
 import win32file
 import win32process
 import shutil
+import winsound
 
 ROOT_PATH = os.path.join(os.environ["HOMEPATH"], "Desktop")
 APP_FOLDER = os.path.join(ROOT_PATH, "digiPrint")
 EXE_PATH =  os.path.join(APP_FOLDER, 'digiPrint.exe')
 CONFIG_PATH =  os.path.join(APP_FOLDER, 'config.json')
+FREQ = 2500
+DURATION = 300
 
 def locate_usb():
     drive_list = []
@@ -56,6 +59,7 @@ while True:
                 handle = win32process.CreateProcess(EXE_PATH,'', None , None , 0 ,win32process. CREATE_NEW_CONSOLE , None , None ,win32process.STARTUPINFO())
                 print(f'Launched APP @ {EXE_PATH}')
                 appLaunched = True
+                winsound.Beep(FREQ, DURATION)
     except:
         errMsg = traceback.format_exc()
         print(errMsg)

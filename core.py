@@ -81,8 +81,11 @@ class MainAPI():
         self.gelomat_error = False
         self.usbInserted = False
     
-    def getTime(self):
-        return datetime.datetime.now().strftime(self.tfmt)
+    def getTime(self, getRaw=False):
+        t = datetime.datetime.now()
+        if getRaw:
+            return t
+        return t.strftime(self.tfmt)
 
     def waitMear(self):
         statusCode, value = self.gelomat.get_single_value()
@@ -172,7 +175,40 @@ class MainAPI():
         self.printer.cut()
         self.dataset = []
 
+    def printConfig(self):
+        # "ip":"192.168.192.168",
+        # "com": "COM3",
+        # "time_format": "%Y-%m-%d %H:%M:%S",
+        # "decimal": 1,
+        # "key_batchend": "enter",
+        # "key_cut": "7",
+        # "key_testpage": "9",
+        # "key_clearError": "0"
+        try:
+            com = cfg.getValue('com')
+            ip = cfg.getValue('ip')
+            time_format = cfg.getValue('time_format')
+            key_batchend = cfg.getValue('key_batchend')
+            key_cut = cfg.getValue('key_cut')
+            key_testpage = cfg.getValue('key_testpage')
+            key_clearError = cfg.getValue('key_clearError')
+            self.printer.printText(f"COM: {com}\n")
+            self.printer.printText(f"Printer IP: {ip}\n")
+            self.printer.printText(f"Time Format: {time_format}\n")
+            self.printer.printText(f"Key of Batch End: {key_batchend}\n")
+            self.printer.printText(f"Key of Cut Page: {key_cut}\n")
+            self.printer.printText(f"Key of Print Test Page: {key_testpage}\n")
+            self.printer.printText(f"Key of Print Config: {5}\n")
+            self.printer.printText(f"Key of Clear Error: {key_clearError}\n")
+        except:
+            print("Printer printing config page error")
+    
     def main(self):
+        startT = time.time()
+        tString = self.getTime()
+        print(f'[Program Start] @ {tString}')
+        print(f'[Program Version] @ {self.version}')
+        print('')
         while True:
             try:
                 self.initHW()
@@ -184,7 +220,9 @@ class MainAPI():
                 if keyboard.is_pressed(cfg.getValue('key_cut')):
                     self.printer.cut()
                 if keyboard.is_pressed(cfg.getValue('key_testpage')):
-                    self.printer.testpage()
+                    self.printer.testPage()
+                if keyboard.is_pressed('5'):
+                    self.printConfig()
 
                 if self.gelomat.connected and self.printer.connected:
                     if self.batchStart:
@@ -210,6 +248,11 @@ class MainAPI():
                     if self.printer.connected:
                         self.printer.printText(f"{errMsg}\n")
             finally:
+                curT = time.time()
+                curTString = self.getTime()
+                if (curT - startT) >= 30:
+                    print(f'[Program is still alive] @ {curTString}')
+                    startT = curT
                 time.sleep(0.2)
 
 
