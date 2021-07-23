@@ -67,7 +67,7 @@ class PrinterAPI():
 
 class MainAPI():
     def __init__(self) -> None:
-        self.version = '1.0.0'
+        self.version = '1.0.1'
         self.gelomat = GelomatDigitest()
         self.printer = PrinterAPI()
         self.dataset = []
@@ -80,6 +80,12 @@ class MainAPI():
         self.errMsg = None
         self.gelomat_error = False
         self.usbInserted = False
+    
+    def write_unit(self, devName):
+        if devName == "GELOMAT II":
+            return 'N'
+        else:
+            return ''
     
     def getTime(self, getRaw=False):
         t = datetime.datetime.now()
@@ -131,10 +137,11 @@ class MainAPI():
     def printBody(self):
         value, statusCode = self.waitMear()
         mearT = self.getTime()
+        devName = self.gelomat.get_dev_name()
         if statusCode == 1:
             if len(self.dataset) == 0:
                 self.printer.printText(f"[Measurement Start] @ {mearT}\n")
-            self.printer.printText(f"{mearT}\t{value}\n")
+            self.printer.printText(f"{mearT}\t{value}{self.write_unit(devName)}\n")
             self.dataset.append(value)
         elif statusCode < 0:
             if len(self.dataset) == 0:
@@ -145,6 +152,7 @@ class MainAPI():
 
     def printFooter(self):
         mearT = self.getTime()
+        devName = self.gelomat.get_dev_name()
         self.printer.printText(f"[Measurement End] @ {mearT}\n\n")             
         self.printer.printText(f"[Summary]\n")
         self.printer.printText(f"number of measurements: {len(self.dataset)}\n")
@@ -167,11 +175,11 @@ class MainAPI():
             maxV = round(max(self.dataset), 1)
             minV = round(min(self.dataset), 1)
 
-        self.printer.printText(f"mean: {avg}\n")
-        self.printer.printText(f"median: {median}\n")
-        self.printer.printText(f"stdev: {stdev}\n")
-        self.printer.printText(f"max: {maxV}\n")
-        self.printer.printText(f"min: {minV}\n")
+        self.printer.printText(f"mean: {avg}{self.write_unit(devName)}\n")
+        self.printer.printText(f"median: {median}{self.write_unit(devName)}\n")
+        self.printer.printText(f"stdev: {stdev}{self.write_unit(devName)}\n")
+        self.printer.printText(f"max: {maxV}{self.write_unit(devName)}\n")
+        self.printer.printText(f"min: {minV}{self.write_unit(devName)}\n")
         self.printer.cut()
         self.dataset = []
 
